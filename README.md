@@ -1,6 +1,6 @@
 <div align="center">    
  
-# Skeleton Video based Action Recognition for Adult Spinal Deformity Classification
+# Gait Cycle based Action Recognition for Adult Spinal Deformity Classification
   
 <!--
 ARXIV   
@@ -18,9 +18,15 @@ graph LR
 A[video] --> B(location detector)
 B --> C[Human area]
 C --> D(gait definition)
-D --> E[gait part]
-E --> F(Classification)
-F --> G[final result]
+
+D --> stance[stance phase]
+D --> swing[swing phase]
+
+stance --> auto[auto fuse]
+swing --> auto[auto fuse]
+
+auto --> cnn[Classification]
+cnn --> result[predict result]
 ```
 
 ## Description
@@ -29,9 +35,8 @@ The main contribute of this project is:
 
 1. use pose estimation to define the gait cycle for different person.
 2. split the gait cycle into several parts.
-3. use the splitted gait cycle to train the model.
+3. defined a method to auto find the positive gait phase.
 4. use the trained model to classify the disease.
-5. test with the different gait cycle part.
 
 The classification label is:
 
@@ -45,13 +50,13 @@ The reason why I combine the HipOA with LCS has two point,
 1. data is not enough.
 2. the HipOA and LCS are similar in the medical expression.
 
-## How to define One Gait Cycle
+## Gait Defined Model
 
 Define the **One Gait Cycle** is a key point in this study.
 A simple but effective way is to use the **pose estimation**.
 For example, use one certain keypoint (left foot, etc.) to define the gait cycle.
 
-![define one gait cycle](images/define_one_gait_cycle.png)
+![define one gait cycle](images/gait_cycle.png)
 
 To estimate the keypoint, we try to use some different method to predict the keypoint.
 
@@ -61,15 +66,29 @@ To estimate the keypoint, we try to use some different method to predict the key
 
 But, there also have some problem in this method.
 
-## Abliation Study for different view
+## Auto fuse the gait cycle
 
-When record the video, we can use different view to record the video.
-In this dataset, it includes two different view.
+``` mermaid
+graph LR
+A[defined gait cycle] --> swing(swing phase frame)
+swing --> st_cnn[stance model]
 
-- left view
-- right view
+st_cnn --> trained_st[trained stance model]
+st_cnn --> sw_pred[predict]
+sw_pred <--> label
 
-Here we try to use the different view to train the model, with several gait parts.
+A --> stance(stance phase frame)
+stance --> sw_cnn[swing model]
+sw_cnn --> st_pred[predict]
+st_pred <--> label
+
+sw_cnn --> trained_sw[trained swing model]
+
+```
+
+We first use the stance phase frames to train the stance model, and use the swing phase frames to train the swing model.
+Then, we use the trained model to predict the gait cycle.
+
 <!-- 
 ## Citation
 
