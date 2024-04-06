@@ -1,7 +1,7 @@
 # hydra config
 hydra:
   run:
-    dir: /workspace/skeleton/logs/${model.model}/${now:%Y-%m-%d}/${model.model_class_num}/${now:%H-%M-%S}
+    dir: /workspace/Auto_Gait_Fusion_PyTorch/logs/${model.model}/${now:%Y-%m-%d}/${model.model_class_num}/${now:%H-%M-%S}
 
 optimizer:
   lr: 0.0001
@@ -45,7 +45,7 @@ train:
   # Transfor_learning
   transfor_learning: True # if use the transformer learning
 
-  log_path: /workspace/skeleton/logs/${model.model}/${now:%Y-%m-%d}/${model.model_class_num}/${now:%H-%M-%S}
+  log_path: /workspace/Auto_Gait_Fusion_PyTorch/logs/${model.model}/${now:%Y-%m-%d}/${model.model_class_num}/${now:%H-%M-%S}
 
   fast_dev_run: False # if use the fast_dev_run
   fold: 3 # the fold number of the cross validation

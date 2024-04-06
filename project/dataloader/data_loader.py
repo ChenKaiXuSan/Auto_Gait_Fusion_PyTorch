@@ -47,7 +47,7 @@ from torch.utils.data import DataLoader
 from pytorchvideo.data import make_clip_sampler
 from pytorchvideo.data.labeled_video_dataset import labeled_video_dataset
 
-from gait_video_dataset import labeled_gait_video_dataset
+from auto_fuse_dataset import labeled_gait_video_dataset
 
 from project.train import GaitCycleLightningModule
 
@@ -86,36 +86,11 @@ class WalkDataModule(LightningDataModule):
 
         self._auto_fuse = opt.train.auto_fuse
 
-        if self._temporal_mix:
-            self.mapping_transform = Compose(
-                [
-                    Div255(),
-                    Resize(size=[self._IMG_SIZE, self._IMG_SIZE])
-                ]
-            )
-        else:
-            self.mapping_transform = Compose(
-                [
-                    UniformTemporalSubsample(self.uniform_temporal_subsample_num),
-                    Div255(),
-                    Resize(size=[self._IMG_SIZE, self._IMG_SIZE]),
-                ]
-            )
-
-        self.train_video_transform = Compose(
+        self.mapping_transform = Compose(
             [
-                ApplyTransformToKey(
-                    key="video",
-                    transform=Compose(
-                        [
-                            Div255(),
-                            Resize(size=[self._IMG_SIZE, self._IMG_SIZE]),
-                            UniformTemporalSubsample(
-                                self.uniform_temporal_subsample_num
-                            ),
-                        ]
-                    ),
-                ),
+                UniformTemporalSubsample(self.uniform_temporal_subsample_num),
+                Div255(),
+                Resize(size=[self._IMG_SIZE, self._IMG_SIZE]),
             ]
         )
 
@@ -168,8 +143,8 @@ class WalkDataModule(LightningDataModule):
                     gait_cycle=self.gait_cycle,
                     dataset_idx=self._dataset_idx[0],  # [train, val]
                     transform=self.mapping_transform,
+                    gait_model = [self.stance_model, self.swing_model],
                     auto_fuse=self._auto_fuse,
-                    gait_model = [self.stance_model, self.swing_model]
                 )
 
         if stage in ("fit", "validate", None):

@@ -42,6 +42,7 @@ from train import GaitCycleLightningModule
 import hydra
 from cross_validation import DefineCrossValidation
 
+
 def save_inference(config, model, dataloader, fold):
 
     total_pred_list = []
@@ -169,12 +170,17 @@ def train(hparams, dataset_idx, fold):
     # the validate method will wirte in the same log twice, so use the test method.
     trainer.test(classification_module, data_module, ckpt_path="best")
 
-    return classification_module.load_from_checkpoint(trainer.checkpoint_callback.best_model_path), data_module
+    return (
+        classification_module.load_from_checkpoint(
+            trainer.checkpoint_callback.best_model_path
+        ),
+        data_module,
+    )
 
 
 @hydra.main(
     version_base=None,
-    config_path="/workspace/skeleton/configs",
+    config_path="/workspace/Auto_Gait_Fusion_PyTorch/configs/",
     config_name="config.yaml",
 )
 def init_params(config):
@@ -192,8 +198,7 @@ def init_params(config):
     # K fold
     #############
     # * for one fold, we first train/val model, then save the best ckpt preds/label into .pt file.
-    
-    
+
     for fold, dataset_value in fold_dataset_idx.items():
         logging.info("#" * 50)
         logging.info("Start train fold: {}".format(fold))

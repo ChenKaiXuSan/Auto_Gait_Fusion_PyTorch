@@ -10,7 +10,7 @@ Comment:
 
 Have a good code time!
 -----
-Last Modified: Saturday April 6th 2024 8:08:31 am
+Last Modified: Saturday April 6th 2024 9:17:42 am
 Modified By: the developer formerly known as Kaixu Chen at <chenkaixusan@gmail.com>
 -----
 HISTORY:
@@ -91,7 +91,7 @@ class GaitCycleLightningModule(LightningModule):
 
         loss = F.cross_entropy(video_preds, label.long())
 
-        self.log("train/loss", loss, on_epoch=True, on_step=True)
+        self.log("train/loss", loss, on_epoch=True, on_step=True, batch_size=b)
 
         # log metrics
         video_acc = self._accuracy(video_preds_softmax, label)
@@ -132,7 +132,7 @@ class GaitCycleLightningModule(LightningModule):
 
         loss = F.cross_entropy(video_preds, label.long())
 
-        self.log("val/loss", loss, on_epoch=True, on_step=True)
+        self.log("val/loss", loss, on_epoch=True, on_step=True, batch_size=b)
 
         # log metrics
         video_acc = self._accuracy(video_preds_softmax, label)
@@ -170,7 +170,7 @@ class GaitCycleLightningModule(LightningModule):
 
         loss = F.cross_entropy(video_preds, label.long())
 
-        self.log("val/loss", loss, on_epoch=True, on_step=True)
+        self.log("val/loss", loss, on_epoch=True, on_step=True, batch_size=b)
 
         # log metrics
         video_acc = self._accuracy(video_preds_softmax, label)
