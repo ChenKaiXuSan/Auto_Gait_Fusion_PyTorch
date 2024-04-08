@@ -73,7 +73,7 @@ class LabeledGaitVideoDataset(torch.utils.data.Dataset):
         gait_cycle: int,
         labeled_video_paths: list[Tuple[str, Optional[dict]]],
         transform: Optional[Callable[[dict], Any]] = None,
-        predict_mapping: Optional[Callable[[dict], Any]] = None,
+        predict_mapping: Optional[Callable[[dict], Any]] = False,
 
     ) -> None:
         super().__init__()
@@ -126,10 +126,10 @@ class LabeledGaitVideoDataset(torch.utils.data.Dataset):
 
             video_map_list = self.predict_mapping[video_name]   
 
-            for i in video_map_list:
-                if i == 0:
+            for i in range(video_map_list):
+                if video_map_list[i] == 0:
                     defined_vframes.append(first_phase[i])
-                if i == 1:
+                if video_map_list[i] == 1:
                     defined_vframes.append(second_phase[i])
 
         else:
@@ -166,7 +166,7 @@ def labeled_gait_video_dataset(
     gait_cycle: int,
     transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
     dataset_idx: Dict = None,
-    predict_mapping: Optional[Dict[str, Any]] = None,
+    predict_mapping: Optional[Dict[str, Any]] = False,
 ) -> LabeledGaitVideoDataset:
 
     

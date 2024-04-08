@@ -28,7 +28,7 @@ model:
 gait_model:
   stance_path: /workspace/Auto_Gait_Fusion_PyTorch/ckpt/stance-3-0.6991.ckpt
   swing_path: /workspace/Auto_Gait_Fusion_PyTorch/ckpt/swing-3-0.5846.ckpt
-  batch_size: 16
+  batch_size: 20
 
 train:
   # Training config

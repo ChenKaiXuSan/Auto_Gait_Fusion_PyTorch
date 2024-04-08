@@ -58,7 +58,7 @@ disease_to_num_mapping_Dict: Dict = {
 }
 
 class WalkDataModule(LightningDataModule):
-    def __init__(self, opt, dataset_idx: Dict = None, predict_mapping: Dict = None):
+    def __init__(self, opt, dataset_idx: Dict = None, predict_mapping: Dict = False):
         super().__init__()
 
         self._seg_path = opt.data.seg_data_path

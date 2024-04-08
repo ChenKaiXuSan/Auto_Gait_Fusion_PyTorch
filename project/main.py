@@ -207,7 +207,7 @@ def init_params(config):
         if config.train.auto_fuse:
             predict_data_mapping = pre_predict(config, dataset_value, fold)
         else:
-            predict_data_mapping = None
+            predict_data_mapping = False
 
         logging.info("#" * 50)
         logging.info("Start train fold: {}".format(fold))

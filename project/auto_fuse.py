@@ -262,4 +262,9 @@ def pre_predict(hparams, dataset_idx, fold):
             res_mapp[k] = one_video_res[idx : idx + v]
             idx = v
 
+    map_file_save_path = hparams.train.log_path + f'/fold{fold}_predict_mapping.json'
+
+    with open(map_file_save_path, 'w') as f:
+        json.dump(res_mapp, f, indent=4)
+
     return res_mapp
