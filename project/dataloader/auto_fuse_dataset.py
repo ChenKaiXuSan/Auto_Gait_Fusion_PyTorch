@@ -126,7 +126,7 @@ class LabeledGaitVideoDataset(torch.utils.data.Dataset):
 
             video_map_list = self.predict_mapping[video_name]   
 
-            for i in range(video_map_list):
+            for i in range(len(video_map_list)):
                 if video_map_list[i] == 0:
                     defined_vframes.append(first_phase[i])
                 if video_map_list[i] == 1:
