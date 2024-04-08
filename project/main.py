@@ -41,7 +41,7 @@ from train import GaitCycleLightningModule
 
 import hydra
 from cross_validation import DefineCrossValidation
-
+from auto_fuse import pre_predict
 
 def save_inference(config, model, dataloader, fold):
 
@@ -110,13 +110,12 @@ def save_inference(config, model, dataloader, fold):
         f"save the pred and label into {save_path} / {config.model.model}_{config.data.sampling}_{fold}"
     )
 
-
-def train(hparams, dataset_idx, fold):
+def train(hparams, dataset_idx, fold, predict_mapping):
     seed_everything(42, workers=True)
 
     classification_module = GaitCycleLightningModule(hparams)
 
-    data_module = WalkDataModule(hparams, dataset_idx)
+    data_module = WalkDataModule(hparams, dataset_idx, predict_mapping)
 
     # for the tensorboard
     tb_logger = TensorBoardLogger(
@@ -188,6 +187,7 @@ def init_params(config):
     # prepare dataset index
     #############
 
+    # * stpe1: define the cross validation, for dataset index.
     fold_dataset_idx = DefineCrossValidation(config)()
 
     logging.info("#" * 50)
@@ -201,10 +201,19 @@ def init_params(config):
 
     for fold, dataset_value in fold_dataset_idx.items():
         logging.info("#" * 50)
+        logging.info("pre-predict fold: {}".format(fold))
+        logging.info("#" * 50)
+
+        if config.train.auto_fuse:
+            predict_data_mapping = pre_predict(config, dataset_value, fold)
+        else:
+            predict_data_mapping = None
+
+        logging.info("#" * 50)
         logging.info("Start train fold: {}".format(fold))
         logging.info("#" * 50)
 
-        classification_module, data_module = train(config, dataset_value, fold)
+        classification_module, data_module = train(config, dataset_value, fold, predict_data_mapping)
 
         logging.info("#" * 50)
         logging.info("finish train fold: {}".format(fold))

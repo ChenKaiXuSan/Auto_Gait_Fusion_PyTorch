@@ -58,7 +58,7 @@ disease_to_num_mapping_Dict: Dict = {
 }
 
 class WalkDataModule(LightningDataModule):
-    def __init__(self, opt, dataset_idx: Dict = None):
+    def __init__(self, opt, dataset_idx: Dict = None, predict_mapping: Dict = None):
         super().__init__()
 
         self._seg_path = opt.data.seg_data_path
@@ -76,15 +76,12 @@ class WalkDataModule(LightningDataModule):
         self._CLIP_DURATION = opt.train.clip_duration
         self.uniform_temporal_subsample_num = opt.train.uniform_temporal_subsample_num
 
-        # load geit model 
-        self.stance_model = GaitCycleLightningModule(opt).load_from_checkpoint(opt.gait_model.stance_path)
-        self.swing_model = GaitCycleLightningModule(opt).load_from_checkpoint(opt.gait_model.swing_path)
-
         # * this is the dataset idx, which include the train/val dataset idx.
         self._dataset_idx = dataset_idx
         self._class_num = opt.model.model_class_num
 
         self._auto_fuse = opt.train.auto_fuse
+        self.predict_mapping = predict_mapping
 
         self.mapping_transform = Compose(
             [
@@ -94,7 +91,7 @@ class WalkDataModule(LightningDataModule):
             ]
         )
 
-        self.val_video_transform = Compose(
+        self.video_transform = Compose(
             [
                 ApplyTransformToKey(
                     key="video",
@@ -133,7 +130,7 @@ class WalkDataModule(LightningDataModule):
                 self.train_gait_dataset = labeled_video_dataset(
                     data_path=self._dataset_idx[2],
                     clip_sampler=make_clip_sampler("uniform", self._CLIP_DURATION),
-                    transform=self.train_video_transform,
+                    transform=self.video_transform,
                 )
 
             else:
@@ -143,22 +140,21 @@ class WalkDataModule(LightningDataModule):
                     gait_cycle=self.gait_cycle,
                     dataset_idx=self._dataset_idx[0],  # [train, val]
                     transform=self.mapping_transform,
-                    gait_model = [self.stance_model, self.swing_model],
-                    auto_fuse=self._auto_fuse,
+                    predict_mapping=self.predict_mapping,
                 )
 
         if stage in ("fit", "validate", None):
             self.val_gait_dataset = labeled_video_dataset(
                 data_path=self._dataset_idx[3],
                 clip_sampler=make_clip_sampler("uniform", self._CLIP_DURATION),
-                transform=self.val_video_transform,
+                transform=self.video_transform,
             )
 
         if stage in ("test", None):
             self.test_gait_dataset = labeled_video_dataset(
                 data_path=self._dataset_idx[3],
                 clip_sampler=make_clip_sampler("uniform", self._CLIP_DURATION),
-                transform=self.val_video_transform,
+                transform=self.video_transform,
             )
 
     def collate_fn(self, batch):

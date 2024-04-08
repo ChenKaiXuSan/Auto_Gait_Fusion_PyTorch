@@ -28,6 +28,7 @@ model:
 gait_model:
   stance_path: /workspace/Auto_Gait_Fusion_PyTorch/ckpt/stance-3-0.6991.ckpt
   swing_path: /workspace/Auto_Gait_Fusion_PyTorch/ckpt/swing-3-0.5846.ckpt
+  batch_size: 16
 
 train:
   # Training config
@@ -37,7 +38,6 @@ train:
   clip_duration: 0.5 # clip duration for the video
   uniform_temporal_subsample_num: 8 # num frame from the clip duration, f or define one gait cycle, we need use whole frames.
 
-  temporal_mix: False
   auto_fuse: False
 
   gpu_num: 0 # choices=[0, 1], help='the gpu number whicht to train'

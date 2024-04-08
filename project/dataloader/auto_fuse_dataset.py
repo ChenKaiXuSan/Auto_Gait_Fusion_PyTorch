@@ -67,83 +67,14 @@ def split_gait_cycle(
     logging.info(f"used split gait cycle index: {use_idx}")
     return ans_list, use_idx  # needed gait cycle video tensor
 
-class AutoFuse(object):
-
-    def __init__(self, stance_model, swing_model, transform) -> None:
-        self.st = stance_model
-        self.sw = swing_model
-        self._transform = transform
-
-    def compare_phase(self, first_phase, second_phase, label):
-
-        res_best_vframes = []
-
-        for i in range(len(first_phase)):
-
-            # move to functional
-            if self._transform is not None:
-
-                transformed_img = self._transform(first_phase[i].permute(1, 0, 2, 3))
-                self.st.eval()
-                with torch.no_grad():
-                    st_pred = self.st(transformed_img.unsqueeze(0))
-                st_pred_softmax = torch.nn.functional.softmax(st_pred, dim=1).squeeze()
-
-                transformed_img = self._transform(second_phase[i].permute(1, 0, 2, 3))
-                self.sw.eval()
-                with torch.no_grad():
-                    sw_pred = self.sw(transformed_img.unsqueeze(0))
-                sw_pred_softmax = torch.nn.functional.softmax(sw_pred, dim=1).squeeze()
-
-                # compare phase score
-                if st_pred_softmax[label] > sw_pred_softmax[label]:
-                    res_best_vframes.append(first_phase[i])
-                else:
-                    res_best_vframes.append(second_phase[i])
-
-        return res_best_vframes
-
-    def __call__(
-        self, video_tensor: torch.Tensor, gait_cycle_index: list, label: list
-    ) -> torch.Tensor:
-
-        # * step1: first find the phase frames (pack) and phase index.
-        first_phase, first_phase_idx = split_gait_cycle(
-            video_tensor, gait_cycle_index, 0
-        )
-        second_phase, second_phase_idx = split_gait_cycle(
-            video_tensor, gait_cycle_index, 1
-        )
-
-        # check if first phse and second phase have the same length
-        if len(first_phase) > len(second_phase):
-            second_phase.append(second_phase[-1])
-            second_phase_idx.append(second_phase_idx[-1])
-        elif len(first_phase) < len(second_phase):
-            first_phase.append(first_phase[-1])
-            first_phase_idx.append(first_phase_idx[-1])
-
-        assert len(first_phase) == len(
-            second_phase
-        ), "first phase and second phase have different length"
-
-        # * step2: compare the phase frame, find the best match
-        best_vframes = self.compare_phase(first_phase, second_phase, label)
-
-        # * step3: process on pack, fuse the frame
-
-        return best_vframes
-
-
 class LabeledGaitVideoDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         gait_cycle: int,
         labeled_video_paths: list[Tuple[str, Optional[dict]]],
         transform: Optional[Callable[[dict], Any]] = None,
-        auto_fuse: bool = False,
-        stance_model: torch.nn.Module = None,
-        swing_model: torch.nn.Module = None,
+        predict_mapping: Optional[Callable[[dict], Any]] = None,
+
     ) -> None:
         super().__init__()
 
@@ -151,14 +82,7 @@ class LabeledGaitVideoDataset(torch.utils.data.Dataset):
         self._labeled_videos = labeled_video_paths
         self._gait_cycle = gait_cycle
 
-        if auto_fuse:
-            self._auto_fuse = AutoFuse(stance_model, swing_model, transform)
-
-        else:
-            self._temporal_mix = False
-
-        self.stance_model = stance_model
-        self.swing_model = swing_model
+        self.predict_mapping = predict_mapping
 
     def __len__(self):
         return len(self._labeled_videos)
@@ -181,9 +105,33 @@ class LabeledGaitVideoDataset(torch.utils.data.Dataset):
 
         logging.info(f"video name: {video_name}, gait cycle index: {gait_cycle_index}")
 
-        if self._auto_fuse:
-            # should return the new frame, named temporal mix.
-            defined_vframes = self._auto_fuse(vframes, gait_cycle_index, label)
+        if self.predict_mapping:
+
+            defined_vframes = []
+
+            first_phase, first_phase_idx = split_gait_cycle(vframes, gait_cycle_index, 0)
+            second_phase, second_phase_idx = split_gait_cycle(vframes, gait_cycle_index, 1)
+
+            # check if first phse and second phase have the same length
+            if len(first_phase) > len(second_phase):
+                second_phase.append(second_phase[-1])
+                second_phase_idx.append(second_phase_idx[-1])
+            elif len(first_phase) < len(second_phase):
+                first_phase.append(first_phase[-1])
+                first_phase_idx.append(first_phase_idx[-1])
+
+            assert len(first_phase) == len(
+                second_phase
+            ), "first phase and second phase have different length"
+
+            video_map_list = self.predict_mapping[video_name]   
+
+            for i in video_map_list:
+                if i == 0:
+                    defined_vframes.append(first_phase[i])
+                if i == 1:
+                    defined_vframes.append(second_phase[i])
+
         else:
             # split gait by gait cycle index, first phase or second phase
             defined_vframes, used_gait_idx = split_gait_cycle(
@@ -218,15 +166,12 @@ def labeled_gait_video_dataset(
     gait_cycle: int,
     transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
     dataset_idx: Dict = None,
-    auto_fuse: bool = False,
-    gait_model: List[Type[Union[torch.nn.Module, Any]]] = None,
+    predict_mapping: Optional[Dict[str, Any]] = None,
 ) -> LabeledGaitVideoDataset:
 
-    stance_model = gait_model[0]
-    swing_model = gait_model[1]
-
+    
     dataset = LabeledGaitVideoDataset(
-        gait_cycle, dataset_idx, transform, auto_fuse, stance_model, swing_model
+        gait_cycle, dataset_idx, transform, predict_mapping
     )
 
     return dataset
